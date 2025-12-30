@@ -2,31 +2,100 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- 全画面指定（iOS/Android） -->
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Handball Analyzer">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Handball">
+
 <title>Handball Analyzer</title>
 <style>
-  html,body{margin:0;height:100%;background:#000}
-  .app{
-    position:fixed; inset:0;
-    padding:env(safe-area-inset-top) env(safe-area-inset-right)
-            env(safe-area-inset-bottom) env(safe-area-inset-left);
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: -apple-system, sans-serif; }
+  .app {
+    position: fixed; inset: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    background: #fff;
+    display: flex; flex-direction: column;
   }
-  iframe{
-    width:100%; height:100%; border:0; display:block; background:#000;
+  iframe {
+    flex: 1; border: 0; width: 100%; height: 100%;
   }
+  
+  /* ユーザー名設定モーダル */
+  #userModal {
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.8);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .modal-card {
+    background: #fff; padding: 20px; border-radius: 12px; width: 80%; max-width: 300px; text-align: center;
+  }
+  input { padding: 10px; width: 100%; box-sizing: border-box; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+  button { padding: 10px 20px; background: #2563eb; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 16px; }
+  .hidden { display: none !important; }
 </style>
 </head>
 <body>
+  
   <div class="app">
     <iframe
-      src="https://script.google.com/macros/s/AKfycbyt89J6pnuxxlheSOQ3X6IGZVdsRGLoo8qM17zI8BF8qR1PbpLUDxyjdfNna9rDM1IwYA/exec"
-      allowfullscreen
+      id="gasFrame"
+      src="" 
+      allow="autoplay; fullscreen"
     ></iframe>
   </div>
+
+  <div id="userModal" class="hidden">
+    <div class="modal-card">
+      <h3>利用者設定</h3>
+      <p>記録者として登録する名前を入力してください。</p>
+      <input type="text" id="userNameInput" placeholder="例: 山田">
+      <button onclick="saveUser()">保存して開始</button>
+    </div>
+  </div>
+
+  <script>
+    // ★ここにGASのURL(/execで終わるやつ)を貼ってください
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyt89J6pnuxxlheSOQ3X6IGZVdsRGLoo8qM17zI8BF8qR1PbpLUDxyjdfNna9rDM1IwYA/exec";
+
+    // 起動時の処理
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedUser = localStorage.getItem('handball_user');
+      
+      if (savedUser) {
+        // 名前があれば、GASのURLにクエリパラメータとして付与してiframeを開く
+        startApp(savedUser);
+      } else {
+        // 名前がなければ入力画面を出す
+        document.getElementById('userModal').classList.remove('hidden');
+      }
+    });
+
+    function saveUser() {
+      const name = document.getElementById('userNameInput').value.trim();
+      if (!name) return alert('名前を入力してください');
+      
+      localStorage.setItem('handball_user', name);
+      document.getElementById('userModal').classList.add('hidden');
+      startApp(name);
+    }
+
+    function startApp(user) {
+      const frame = document.getElementById('gasFrame');
+      // GAS側で「e.parameter.user」として受け取れるようにURLパラメータを追加
+      // ※GAS側コードに少しだけ追記が必要です（後述）
+      // しかし、今のあなたのGASコードは doPost で JSONを受け取る仕様なので、
+      // 実は iframe の src につけても直接は読み込まれません。
+      // なので、これは「見た目だけ」GitHubアプリにして、中身はGASのHTMLを表示する形になります。
+      
+      // 一番確実なのは、「GAS側の index.html」にも localStorage の仕組みを入れることですが、
+      // ここでは iframe をロードします。
+      frame.src = GAS_URL;
+    }
+  </script>
 </body>
 </html>
